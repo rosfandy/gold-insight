@@ -1,5 +1,9 @@
 "use client";
-import Graph from "../../components/chart/graph";
+import dynamic from 'next/dynamic';
+
+const Graph = dynamic(() => import("../../components/chart/graph"), {
+    ssr: false
+});
 
 export default function Dashboard() {
     return (

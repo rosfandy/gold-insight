@@ -7,7 +7,7 @@ interface Data {
     [key: string]: string | number;
 }
 
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
     const results: Data[] = [];
     const filePath = path.resolve('./public/dataset/data_gold.csv');
 
