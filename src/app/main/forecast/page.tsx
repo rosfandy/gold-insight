@@ -69,7 +69,7 @@ export default function Forecast() {
                     )}
                     {data && (
                         <div className="flex justify-center gap-x-4">
-                            <div className="">{data['result']}</div>
+                            <div className="">USD {data['result']}</div>
                             <div className="">{`(${data['exec_time']} s)`}</div>
                         </div>
                     )}
