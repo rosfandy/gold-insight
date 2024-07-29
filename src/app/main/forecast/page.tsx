@@ -20,6 +20,7 @@ export default function Forecast() {
     const [data, setData] = useState<ForecastData[] | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [loadingText, setLoadingText] = useState<string>("Predicting");
+    const [hasPredicted, setHasPredicted] = useState<boolean>(false);
 
     const submitData = async (e: FormEvent) => {
         e.preventDefault();
@@ -30,15 +31,21 @@ export default function Forecast() {
 
         setLoading(true);
         setLoadingText("Predicting");
+        setHasPredicted(true);
 
         try {
             const response = await axios.post(`${process.env.REACT_APP_HOST}/api/gold/predict`, {
                 month,
                 year
             });
-            setData(response.data);
+            if (response.data && response.data.length > 0) {
+                setData(response.data);
+            } else {
+                setData(null);
+            }
         } catch (error) {
             console.error("Error fetching data:", error);
+            setData(null);
         } finally {
             setLoading(false);
         }
@@ -137,6 +144,9 @@ export default function Forecast() {
                     </div>
                     {loading && (
                         <div className="flex justify-center">{loadingText}</div>
+                    )}
+                    {hasPredicted && !loading && !data && (
+                        <div className="flex justify-center">No result predict</div>
                     )}
                     {data && (
                         <div className="flex justify-center gap-x-4">
