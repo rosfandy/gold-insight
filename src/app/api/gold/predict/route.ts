@@ -6,7 +6,9 @@ export async function POST(req: NextRequest) {
         return new Response(null, { status: 404, statusText: "Not Found" });
     try {
         const json = await req.json();
-        const res = await predict(json.datetime)
+        console.log(json)
+        const res = await predict(json.month, json.year)
+        console.log(res)
         return new Response(JSON.stringify(res), { status: 200 });
     } catch (e) {
         console.log(e);
@@ -14,13 +16,14 @@ export async function POST(req: NextRequest) {
     }
 }
 
-const predict = async (date: string) => {
+const predict = async (month: number, year: number) => {
     try {
         const response = await axios.post(`${process.env.FLASK_APP_HOST}/predict`, {
-            datetime: date
+            month,
+            year
         });
         return response.data
     } catch (err) {
-        console.log(err)
+        return err
     }
 }

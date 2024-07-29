@@ -26,7 +26,6 @@ function Areachart() {
 
                         colors: ['#f90000'],
                         stroke: { width: 3, curve: 'smooth' },
-                        ///fill:{opacity:1, type:'solid'},
 
                         xaxis: {
                             title: {

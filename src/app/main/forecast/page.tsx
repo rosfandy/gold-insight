@@ -1,30 +1,42 @@
 "use client"
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
+import dynamic from "next/dynamic";
+import { ApexOptions } from "apexcharts";
+
+// Dynamic import for ReactApexChart
+const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
+
+interface ForecastData {
+    "Gold price": number;
+    "Inflasi": number;
+    "Minyak": number;
+    "Suku bunga": number;
+    "index": string;
+}
 
 export default function Forecast() {
-    const [date, setDate] = useState('');
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [loadingText, setLoadingText] = useState("Predicting");
+    const [date, setDate] = useState<string>('');
+    const [data, setData] = useState<ForecastData[] | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [loadingText, setLoadingText] = useState<string>("Predicting");
 
-    const submitData = async (e: any) => {
+    const submitData = async (e: FormEvent) => {
         e.preventDefault();
 
-        const formattedDate = new Date(date).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit'
-        });
+        const selectedDate = new Date(date);
+        const month = selectedDate.getMonth() + 1;
+        const year = selectedDate.getFullYear();
 
         setLoading(true);
-        setLoadingText("predicting");
+        setLoadingText("Predicting");
 
         try {
             const response = await axios.post(`${process.env.REACT_APP_HOST}/api/gold/predict`, {
-                datetime: formattedDate
+                month,
+                year
             });
-            setData(response.data)
+            setData(response.data);
         } catch (error) {
             console.error("Error fetching data:", error);
         } finally {
@@ -33,20 +45,79 @@ export default function Forecast() {
     }
 
     useEffect(() => {
-        let intervalId: any;
+        let intervalId: NodeJS.Timeout;
 
         if (loading) {
             intervalId = setInterval(() => {
                 setLoadingText(prev => {
-                    // Check if the text reaches "Predicting..." (12 characters including 3 dots)
                     if (prev.length > 12) return "Predicting";
                     return prev + ".";
                 });
-            }, 500); // Adjust the timing as necessary
+            }, 500);
         }
 
-        return () => clearInterval(intervalId);  // Clean up the interval on unmount
+        return () => clearInterval(intervalId);
     }, [loading]);
+
+    const chartOptions: ApexOptions = {
+        chart: {
+            type: 'line',
+            height: 350,
+            zoom: {
+                enabled: false
+            }
+        },
+        title: {
+            text: 'Gold Price Forecast',
+            align: 'left'
+        },
+        xaxis: {
+            type: 'datetime',
+            categories: data ? data.map(d => d.index) : []
+        },
+        yaxis: {
+            title: {
+                text: 'Price (USD)'
+            },
+            labels: {
+                formatter: function (value: number) {
+                    return value.toFixed(2); // Set decimal places to 2
+                }
+            }
+        },
+        responsive: [
+            {
+                breakpoint: 1000,
+                options: {
+                    chart: {
+                        width: '100%',
+                        height: 300
+                    }
+                }
+            },
+            {
+                breakpoint: 600,
+                options: {
+                    chart: {
+                        width: '100%',
+                        height: 200
+                    },
+                    xaxis: {
+                        labels: {
+                            show: false
+                        }
+                    }
+                }
+            }
+        ],
+    };
+
+    const chartSeries = [
+        {
+            name: 'Gold Price',
+            data: data ? data.map(d => d["Gold price"]) : []
+        }
+    ];
 
     return (
         <div className="">
@@ -58,7 +129,7 @@ export default function Forecast() {
                     </div>
                     <div className="px-8 py-4 flex justify-center">
                         <form className="flex md:gap-x-2 md:gap-y-0 gap-y-2 md:flex-row flex-col" onSubmit={submitData}>
-                            <input className="border px-4 rounded" type="date" name="datetime"
+                            <input className="border px-4 rounded" type="month" name="datetime"
                                 value={date}
                                 onChange={e => setDate(e.target.value)} />
                             <button type="submit" className="bg-[#c3ab5c] md:px-6 px-2 py-2 rounded text-white text-xs hover:bg-[#897841] duration-200">Predict</button>
@@ -69,8 +140,13 @@ export default function Forecast() {
                     )}
                     {data && (
                         <div className="flex justify-center gap-x-4">
-                            <div className="">USD {data['result']}</div>
-                            <div className="">{`(${data['exec_time']} s)`}</div>
+                            <ReactApexChart
+                                options={chartOptions}
+                                series={chartSeries}
+                                type="line"
+                                height={350}
+                                width={850}
+                            />
                         </div>
                     )}
                 </div>
